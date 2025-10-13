@@ -56,72 +56,89 @@ tasks:
     cmds:
       - docker exec -it pg-test-internal psql -U {{.InternalUser}} -d {{.InternalDB}}
 
-  # Seed data management tasks (delegates to db-testkit)
-  # Dev database seed tasks
+  # Seed data management tasks (from db-testkit)
+  # Dev database seed tasks (manual testing)
   seed:load:dev:generated:
-    desc: Load seed data into dev customer database (delegates to db-testkit)
+    desc: Load seed data into dev customer database (from db-testkit)
     cmds:
       - echo "Loading seed data into dev customer database..."
-      - task -t ../db-testkit seed:load:olist:dev
+      - cat ../db-testkit/testdata/seeds/olist.sql | docker exec -i pg-customer psql -U dev -d customerdb
+      - echo "✓ Successfully loaded seed data into dev customer database"
 
   seed:verify:dev:generated:
-    desc: Verify seed data in dev customer database (delegates to db-testkit)
+    desc: Verify seed data in dev customer database (from db-testkit)
     cmds:
-      - task -t ../db-testkit seed:verify:olist:dev
+      - echo "Verifying seed data in dev customer database..."
+      - docker exec pg-customer psql -U dev -d customerdb -c "SELECT schemaname, relname as tablename, n_live_tup as row_count FROM pg_stat_user_tables WHERE schemaname = 'stage' AND relname LIKE 'olist%' ORDER BY relname;"
 
   seed:reload:dev:generated:
-    desc: Reload seed data in dev customer database (delegates to db-testkit)
+    desc: Reload seed data in dev customer database (from db-testkit)
     cmds:
-      - task -t ../db-testkit seed:reload:olist:dev
+      - echo "Dropping stage schema in dev customer database..."
+      - docker exec pg-customer psql -U dev -d customerdb -c "DROP SCHEMA IF EXISTS stage CASCADE;"
+      - task: seed:load:dev:generated
 
   seed:clean:dev:generated:
-    desc: Clean seed data from dev customer database (delegates to db-testkit)
+    desc: Clean seed data from dev customer database (from db-testkit)
     cmds:
-      - task -t ../db-testkit seed:clean:dev
+      - echo "Dropping stage schema from dev customer database..."
+      - docker exec pg-customer psql -U dev -d customerdb -c "DROP SCHEMA IF EXISTS stage CASCADE;"
+      - echo "✓ Successfully dropped stage schema from dev customer database"
 
-  # Test database seed tasks
+  # Test database seed tasks (automated testing)
   seed:load:test:generated:
-    desc: Load seed data into test customer database (delegates to db-testkit)
+    desc: Load seed data into test customer database (from db-testkit)
     cmds:
       - echo "Loading seed data into test customer database..."
-      - task -t ../db-testkit seed:load:olist:test
+      - cat ../db-testkit/testdata/seeds/olist.sql | docker exec -i pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}}
+      - echo "✓ Successfully loaded seed data into test customer database"
 
   seed:verify:test:generated:
-    desc: Verify seed data in test customer database (delegates to db-testkit)
+    desc: Verify seed data in test customer database (from db-testkit)
     cmds:
-      - task -t ../db-testkit seed:verify:olist:test
+      - echo "Verifying seed data in test customer database..."
+      - docker exec pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}} -c "SELECT schemaname, relname as tablename, n_live_tup as row_count FROM pg_stat_user_tables WHERE schemaname = 'stage' AND relname LIKE 'olist%' ORDER BY relname;"
 
   seed:reload:test:generated:
-    desc: Reload seed data in test customer database (delegates to db-testkit)
+    desc: Reload seed data in test customer database (from db-testkit)
     cmds:
-      - task -t ../db-testkit seed:reload:olist:test
+      - echo "Dropping stage schema in test customer database..."
+      - docker exec pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}} -c "DROP SCHEMA IF EXISTS stage CASCADE;"
+      - task: seed:load:test:generated
 
   seed:clean:test:generated:
-    desc: Clean seed data from test customer database (delegates to db-testkit)
+    desc: Clean seed data from test customer database (from db-testkit)
     cmds:
-      - task -t ../db-testkit seed:clean:test
+      - echo "Dropping stage schema from test customer database..."
+      - docker exec pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}} -c "DROP SCHEMA IF EXISTS stage CASCADE;"
+      - echo "✓ Successfully dropped stage schema from test customer database"
 
   # Both databases seed tasks
   seed:load:all:generated:
-    desc: Load seed data into both dev and test customer databases (delegates to db-testkit)
+    desc: Load seed data into both dev and test customer databases (from db-testkit)
     cmds:
       - echo "Loading seed data into all customer databases..."
-      - task -t ../db-testkit seed:load:olist
+      - task: seed:load:dev:generated
+      - task: seed:load:test:generated
 
   seed:verify:all:generated:
-    desc: Verify seed data in both dev and test customer databases (delegates to db-testkit)
+    desc: Verify seed data in both dev and test customer databases (from db-testkit)
     cmds:
-      - task -t ../db-testkit seed:verify:olist
+      - task: seed:verify:dev:generated
+      - echo ""
+      - task: seed:verify:test:generated
 
   seed:reload:all:generated:
-    desc: Reload seed data in both dev and test customer databases (delegates to db-testkit)
+    desc: Reload seed data in both dev and test customer databases (from db-testkit)
     cmds:
-      - task -t ../db-testkit seed:reload:olist
+      - task: seed:reload:dev:generated
+      - task: seed:reload:test:generated
 
   seed:clean:all:generated:
-    desc: Clean seed data from both dev and test customer databases (delegates to db-testkit)
+    desc: Clean seed data from both dev and test customer databases (from db-testkit)
     cmds:
-      - task -t ../db-testkit seed:clean
+      - task: seed:clean:dev:generated
+      - task: seed:clean:test:generated
 `
 
 	t, err := template.New("taskfile").Parse(tmpl)
