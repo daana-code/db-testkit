@@ -1,0 +1,132 @@
+# Standard Database Setup Template for db-testkit
+# ================================================
+# This template provides a standard 4-database setup for development and testing:
+# - db (dev customer database on port 5432)
+# - db-internal (dev metadata database on port 5434)
+# - db-test-customer (test customer database on port 5555)
+# - db-test-internal (test metadata database on port 6666)
+#
+# Usage Option 1: Include in your docker-compose.yml
+# ---------------------------------------------------
+# include:
+#   - path: ../db-testkit/templates/docker-compose.databases.yml
+#
+# services:
+#   # Add your project-specific services here
+#
+# Usage Option 2: Copy and customize
+# -----------------------------------
+# Copy this file to your project and modify as needed
+#
+# ⚠️  SINGLE SOURCE OF TRUTH for database credentials ⚠️
+# These values are extracted by db-testkit to generate:
+# - Taskfile.generated.yml (task automation)
+# - internal/project/generated_config.go (Go constants)
+# - connection-profiles-test.yaml (connection profiles)
+
+services:
+  # MANUAL TESTING - Customer PostgreSQL (contains source data + application warehouse)
+  db:
+    image: postgres:15
+    container_name: pg-customer
+    restart: unless-stopped
+    command: >
+      postgres
+      -c log_statement=all
+      -c log_destination=stderr
+      -c logging_collector=off
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: customerdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-customer-data:/var/lib/postgresql/data
+      # Optional: Add seed data for your project
+      # - ./testdata/seed.sql:/docker-entrypoint-initdb.d/seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d customerdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # MANUAL TESTING - Internal PostgreSQL (metadata database)
+  db-internal:
+    image: postgres:15
+    container_name: pg-internal
+    restart: unless-stopped
+    command: >
+      postgres
+      -c log_statement=all
+      -c log_destination=stderr
+      -c logging_collector=off
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: focaldb
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg-internal-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d focaldb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # AUTOMATED TESTING - Customer PostgreSQL (for automated test suite)
+  db-test-customer:
+    image: postgres:15
+    container_name: pg-test-customer
+    restart: unless-stopped
+    command: >
+      postgres
+      -c log_statement=all
+      -c log_destination=stderr
+      -c logging_collector=off
+    environment:
+      POSTGRES_USER: autotester
+      POSTGRES_PASSWORD: autotestpass
+      POSTGRES_DB: testcustomerdb
+    ports:
+      - "5555:5432"
+    volumes:
+      - pg-test-customer-data:/var/lib/postgresql/data
+      # Optional: Add seed data for your project
+      # - ./testdata/seed.sql:/docker-entrypoint-initdb.d/seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autotester -d testcustomerdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # AUTOMATED TESTING - Internal PostgreSQL (for automated test suite)
+  db-test-internal:
+    image: postgres:15
+    container_name: pg-test-internal
+    restart: unless-stopped
+    command: >
+      postgres
+      -c log_statement=all
+      -c log_destination=stderr
+      -c logging_collector=off
+    environment:
+      POSTGRES_USER: autotester
+      POSTGRES_PASSWORD: autotestpass
+      POSTGRES_DB: testfocaldb
+    ports:
+      - "6666:5432"
+    volumes:
+      - pg-test-internal-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autotester -d testfocaldb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pg-customer-data:
+  pg-internal-data:
+  pg-test-customer-data:
+  pg-test-internal-data:
