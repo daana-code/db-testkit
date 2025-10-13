@@ -1,0 +1,257 @@
+# Taskfile.yml
+#
+# DB-TESTKIT SEED DATA MANAGEMENT
+#
+# This Taskfile provides reusable seed data management tasks for the standard
+# 4-database setup. Projects that use db-testkit can call these tasks directly
+# or create wrapper tasks in their own Taskfiles.
+#
+# DATABASE ARCHITECTURE:
+#   Development Databases:
+#     - pg-customer (5432) - customerdb
+#     - pg-internal (5434) - focaldb
+#     Credentials: dev/devpass
+#
+#   Test Databases:
+#     - pg-test-customer (5555) - testcustomerdb
+#     - pg-test-internal (6666) - testfocaldb
+#     Credentials: autotester/autotestpass
+#
+# AVAILABLE SEED FILES:
+#   - olist.sql: Brazilian e-commerce dataset (Olist) in 'stage' schema
+#
+# USAGE EXAMPLES:
+#   task seed:load:olist          # Load into both dev and test customer DBs
+#   task seed:load:olist:dev      # Load into dev customer DB only
+#   task seed:reload:olist:dev    # Drop stage schema and reload
+#   task seed:verify:olist        # Verify data loaded correctly
+#   task seed:list                # List available seed files
+#
+# NOTES:
+#   - Seed files are loaded via psql, not volume mounts
+#   - Can reload seed data anytime without destroying database volumes
+#   - Only customer databases receive seed data (not internal/focal DBs)
+#   - All seed files are in testdata/seeds/ directory
+
+version: "3"
+
+vars:
+  # Development database credentials
+  DEV_CUSTOMER_CONTAINER: "pg-customer"
+  DEV_CUSTOMER_USER: "dev"
+  DEV_CUSTOMER_PASSWORD: "devpass"
+  DEV_CUSTOMER_DB: "customerdb"
+  DEV_CUSTOMER_PORT: "5432"
+
+  DEV_INTERNAL_CONTAINER: "pg-internal"
+  DEV_INTERNAL_USER: "dev"
+  DEV_INTERNAL_PASSWORD: "devpass"
+  DEV_INTERNAL_DB: "focaldb"
+  DEV_INTERNAL_PORT: "5434"
+
+  # Test database credentials
+  TEST_CUSTOMER_CONTAINER: "pg-test-customer"
+  TEST_CUSTOMER_USER: "autotester"
+  TEST_CUSTOMER_PASSWORD: "autotestpass"
+  TEST_CUSTOMER_DB: "testcustomerdb"
+  TEST_CUSTOMER_PORT: "5555"
+
+  TEST_INTERNAL_CONTAINER: "pg-test-internal"
+  TEST_INTERNAL_USER: "autotester"
+  TEST_INTERNAL_PASSWORD: "autotestpass"
+  TEST_INTERNAL_DB: "testfocaldb"
+  TEST_INTERNAL_PORT: "6666"
+
+  # Seed data paths
+  SEED_DIR: "testdata/seeds"
+
+tasks:
+  default:
+    desc: List all available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  # ============================================================================
+  # SEED LOADING TASKS
+  # ============================================================================
+
+  seed:load:olist:dev:
+    desc: Load olist seed data into dev customer database
+    cmds:
+      - echo "Loading olist seed data into dev customer database ({{.DEV_CUSTOMER_DB}})..."
+      - cat {{.SEED_DIR}}/olist.sql | docker exec -i {{.DEV_CUSTOMER_CONTAINER}} psql -U {{.DEV_CUSTOMER_USER}} -d {{.DEV_CUSTOMER_DB}}
+      - echo "✓ Successfully loaded olist seed data into dev customer database"
+
+  seed:load:olist:test:
+    desc: Load olist seed data into test customer database
+    cmds:
+      - echo "Loading olist seed data into test customer database ({{.TEST_CUSTOMER_DB}})..."
+      - cat {{.SEED_DIR}}/olist.sql | docker exec -i {{.TEST_CUSTOMER_CONTAINER}} psql -U {{.TEST_CUSTOMER_USER}} -d {{.TEST_CUSTOMER_DB}}
+      - echo "✓ Successfully loaded olist seed data into test customer database"
+
+  seed:load:olist:
+    desc: Load olist seed data into both dev and test customer databases
+    cmds:
+      - task: seed:load:olist:dev
+      - task: seed:load:olist:test
+      - echo "✓ Successfully loaded olist seed data into all customer databases"
+
+  # ============================================================================
+  # SEED VERIFICATION TASKS
+  # ============================================================================
+
+  seed:verify:olist:dev:
+    desc: Verify olist seed data exists in dev customer database
+    cmds:
+      - echo "Verifying olist seed data in dev customer database..."
+      - |
+        docker exec {{.DEV_CUSTOMER_CONTAINER}} psql -U {{.DEV_CUSTOMER_USER}} -d {{.DEV_CUSTOMER_DB}} -c "
+        SELECT
+          schemaname,
+          relname as tablename,
+          n_live_tup as row_count
+        FROM pg_stat_user_tables
+        WHERE schemaname = 'stage'
+          AND relname LIKE 'olist%'
+        ORDER BY relname;" || echo "❌ No olist tables found in dev database"
+
+  seed:verify:olist:test:
+    desc: Verify olist seed data exists in test customer database
+    cmds:
+      - echo "Verifying olist seed data in test customer database..."
+      - |
+        docker exec {{.TEST_CUSTOMER_CONTAINER}} psql -U {{.TEST_CUSTOMER_USER}} -d {{.TEST_CUSTOMER_DB}} -c "
+        SELECT
+          schemaname,
+          relname as tablename,
+          n_live_tup as row_count
+        FROM pg_stat_user_tables
+        WHERE schemaname = 'stage'
+          AND relname LIKE 'olist%'
+        ORDER BY relname;" || echo "❌ No olist tables found in test database"
+
+  seed:verify:olist:
+    desc: Verify olist seed data exists in all customer databases
+    cmds:
+      - task: seed:verify:olist:dev
+      - echo ""
+      - task: seed:verify:olist:test
+
+  # ============================================================================
+  # SEED RELOAD TASKS (clean + load)
+  # ============================================================================
+
+  seed:reload:olist:dev:
+    desc: Drop stage schema and reload olist seed data in dev customer database
+    cmds:
+      - echo "Dropping stage schema in dev customer database..."
+      - docker exec {{.DEV_CUSTOMER_CONTAINER}} psql -U {{.DEV_CUSTOMER_USER}} -d {{.DEV_CUSTOMER_DB}} -c "DROP SCHEMA IF EXISTS stage CASCADE;"
+      - task: seed:load:olist:dev
+      - echo "✓ Successfully reloaded olist seed data in dev customer database"
+
+  seed:reload:olist:test:
+    desc: Drop stage schema and reload olist seed data in test customer database
+    cmds:
+      - echo "Dropping stage schema in test customer database..."
+      - docker exec {{.TEST_CUSTOMER_CONTAINER}} psql -U {{.TEST_CUSTOMER_USER}} -d {{.TEST_CUSTOMER_DB}} -c "DROP SCHEMA IF EXISTS stage CASCADE;"
+      - task: seed:load:olist:test
+      - echo "✓ Successfully reloaded olist seed data in test customer database"
+
+  seed:reload:olist:
+    desc: Drop stage schema and reload olist seed data in both customer databases
+    cmds:
+      - task: seed:reload:olist:dev
+      - task: seed:reload:olist:test
+      - echo "✓ Successfully reloaded olist seed data in all customer databases"
+
+  # ============================================================================
+  # SEED CLEANUP TASKS
+  # ============================================================================
+
+  seed:clean:dev:
+    desc: Drop stage schema from dev customer database (removes all seed data)
+    cmds:
+      - echo "Dropping stage schema from dev customer database..."
+      - docker exec {{.DEV_CUSTOMER_CONTAINER}} psql -U {{.DEV_CUSTOMER_USER}} -d {{.DEV_CUSTOMER_DB}} -c "DROP SCHEMA IF EXISTS stage CASCADE;"
+      - echo "✓ Successfully dropped stage schema from dev customer database"
+
+  seed:clean:test:
+    desc: Drop stage schema from test customer database (removes all seed data)
+    cmds:
+      - echo "Dropping stage schema from test customer database..."
+      - docker exec {{.TEST_CUSTOMER_CONTAINER}} psql -U {{.TEST_CUSTOMER_USER}} -d {{.TEST_CUSTOMER_DB}} -c "DROP SCHEMA IF EXISTS stage CASCADE;"
+      - echo "✓ Successfully dropped stage schema from test customer database"
+
+  seed:clean:
+    desc: Drop stage schema from all customer databases (removes all seed data)
+    cmds:
+      - task: seed:clean:dev
+      - task: seed:clean:test
+      - echo "✓ Successfully dropped stage schema from all customer databases"
+
+  # ============================================================================
+  # HELPER TASKS
+  # ============================================================================
+
+  seed:list:
+    desc: List all available seed files
+    cmds:
+      - echo "Available seed files in {{.SEED_DIR}}:"
+      - ls -lh {{.SEED_DIR}}/*.sql 2>/dev/null || echo "No seed files found"
+      - echo ""
+      - echo "Use 'task seed:load:SEEDNAME' to load a seed file"
+      - echo "Example - task seed:load:olist"
+
+  db:status:dev:
+    desc: Show dev database status and connection info
+    cmds:
+      - echo "=== Development Databases ==="
+      - |
+        docker exec {{.DEV_CUSTOMER_CONTAINER}} pg_isready -U {{.DEV_CUSTOMER_USER}} -d {{.DEV_CUSTOMER_DB}} >/dev/null 2>&1 \
+          && echo "✓ {{.DEV_CUSTOMER_DB}} ({{.DEV_CUSTOMER_CONTAINER}}:{{.DEV_CUSTOMER_PORT}}) is ready" \
+          || echo "✗ {{.DEV_CUSTOMER_DB}} is not accessible"
+      - |
+        docker exec {{.DEV_INTERNAL_CONTAINER}} pg_isready -U {{.DEV_INTERNAL_USER}} -d {{.DEV_INTERNAL_DB}} >/dev/null 2>&1 \
+          && echo "✓ {{.DEV_INTERNAL_DB}} ({{.DEV_INTERNAL_CONTAINER}}:{{.DEV_INTERNAL_PORT}}) is ready" \
+          || echo "✗ {{.DEV_INTERNAL_DB}} is not accessible"
+
+  db:status:test:
+    desc: Show test database status and connection info
+    cmds:
+      - echo "=== Test Databases ==="
+      - |
+        docker exec {{.TEST_CUSTOMER_CONTAINER}} pg_isready -U {{.TEST_CUSTOMER_USER}} -d {{.TEST_CUSTOMER_DB}} >/dev/null 2>&1 \
+          && echo "✓ {{.TEST_CUSTOMER_DB}} ({{.TEST_CUSTOMER_CONTAINER}}:{{.TEST_CUSTOMER_PORT}}) is ready" \
+          || echo "✗ {{.TEST_CUSTOMER_DB}} is not accessible"
+      - |
+        docker exec {{.TEST_INTERNAL_CONTAINER}} pg_isready -U {{.TEST_INTERNAL_USER}} -d {{.TEST_INTERNAL_DB}} >/dev/null 2>&1 \
+          && echo "✓ {{.TEST_INTERNAL_DB}} ({{.TEST_INTERNAL_CONTAINER}}:{{.TEST_INTERNAL_PORT}}) is ready" \
+          || echo "✗ {{.TEST_INTERNAL_DB}} is not accessible"
+
+  db:status:
+    desc: Show all database status and connection info
+    cmds:
+      - task: db:status:dev
+      - echo ""
+      - task: db:status:test
+
+  db:shell:dev:customer:
+    desc: Open psql shell to dev customer database
+    cmds:
+      - docker exec -it {{.DEV_CUSTOMER_CONTAINER}} psql -U {{.DEV_CUSTOMER_USER}} -d {{.DEV_CUSTOMER_DB}}
+
+  db:shell:dev:internal:
+    desc: Open psql shell to dev internal database
+    cmds:
+      - docker exec -it {{.DEV_INTERNAL_CONTAINER}} psql -U {{.DEV_INTERNAL_USER}} -d {{.DEV_INTERNAL_DB}}
+
+  db:shell:test:customer:
+    desc: Open psql shell to test customer database
+    cmds:
+      - docker exec -it {{.TEST_CUSTOMER_CONTAINER}} psql -U {{.TEST_CUSTOMER_USER}} -d {{.TEST_CUSTOMER_DB}}
+
+  db:shell:test:internal:
+    desc: Open psql shell to test internal database
+    cmds:
+      - docker exec -it {{.TEST_INTERNAL_CONTAINER}} psql -U {{.TEST_INTERNAL_USER}} -d {{.TEST_INTERNAL_DB}}

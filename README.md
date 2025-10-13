@@ -117,6 +117,81 @@ All databases:
 - Use persistent volumes
 - Support SQL seed files via `/docker-entrypoint-initdb.d/`
 
+## Seed Data
+
+db-testkit provides centralized seed data that can be shared across multiple projects. The seed data is stored in `testdata/seeds/` and includes Taskfile tasks for flexible loading and management.
+
+### Available Seed Files
+
+- **olist.sql**: Comprehensive Brazilian e-commerce dataset (Olist) with customers, orders, payments, reviews, products, sellers, and geolocation data in the `stage` schema.
+
+### Using Seed Data (Recommended: Taskfile Tasks)
+
+db-testkit includes a Taskfile with convenient tasks for loading, verifying, and reloading seed data. This is the **recommended approach** because it:
+- Can load seed data anytime (not just on first initialization)
+- Allows selective reloading without destroying all database data
+- Provides verification tasks to check data loaded correctly
+- Works across all environments (dev and test databases)
+
+```bash
+# Load olist seed into both dev and test customer databases
+task seed:load:olist
+
+# Load into specific environment
+task seed:load:olist:dev        # Dev database only
+task seed:load:olist:test       # Test database only
+
+# Verify seed data loaded correctly
+task seed:verify:olist           # Check both databases
+task seed:verify:olist:dev       # Check dev only
+
+# Reload seed data (drops stage schema and reloads)
+task seed:reload:olist           # Reload both databases
+task seed:reload:olist:dev       # Reload dev only
+
+# Clean up seed data
+task seed:clean                  # Drop stage schema from all databases
+task seed:clean:dev              # Drop from dev only
+
+# List available seed files
+task seed:list
+
+# Check database status
+task db:status                   # All databases
+task db:status:dev               # Dev databases only
+```
+
+**Note**: These tasks work from the db-testkit directory. Projects can call them using:
+```bash
+# From your project directory
+cd ../db-testkit && task seed:load:olist
+
+# Or use task's -t flag
+task -t ../db-testkit seed:load:olist
+```
+
+### Alternative: Volume Mounting (First Initialization Only)
+
+You can also mount seed files into the PostgreSQL initialization directory for automatic loading on first container startup:
+
+```yaml
+# docker-compose.yml
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - pg-customer-data:/var/lib/postgresql/data
+      - ../db-testkit/testdata/seeds/olist.sql:/docker-entrypoint-initdb.d/olist.sql
+```
+
+**Note**: Volume-mounted seed files only run on first initialization. To reload, you must remove volumes:
+```bash
+docker compose down -v  # Remove volumes (destroys ALL data!)
+docker compose up -d    # Recreate with seed data
+```
+
+This approach is less flexible than using Taskfile tasks, but useful for automated CI/CD pipelines.
+
 ## Generated Files
 
 ### 1. Taskfile.generated.yml

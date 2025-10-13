@@ -55,6 +55,73 @@ tasks:
     desc: Connect to automated testing internal PostgreSQL with psql (using generated credentials)
     cmds:
       - docker exec -it pg-test-internal psql -U {{.InternalUser}} -d {{.InternalDB}}
+
+  # Seed data management tasks (delegates to db-testkit)
+  # Dev database seed tasks
+  seed:load:dev:generated:
+    desc: Load seed data into dev customer database (delegates to db-testkit)
+    cmds:
+      - echo "Loading seed data into dev customer database..."
+      - task -t ../db-testkit seed:load:olist:dev
+
+  seed:verify:dev:generated:
+    desc: Verify seed data in dev customer database (delegates to db-testkit)
+    cmds:
+      - task -t ../db-testkit seed:verify:olist:dev
+
+  seed:reload:dev:generated:
+    desc: Reload seed data in dev customer database (delegates to db-testkit)
+    cmds:
+      - task -t ../db-testkit seed:reload:olist:dev
+
+  seed:clean:dev:generated:
+    desc: Clean seed data from dev customer database (delegates to db-testkit)
+    cmds:
+      - task -t ../db-testkit seed:clean:dev
+
+  # Test database seed tasks
+  seed:load:test:generated:
+    desc: Load seed data into test customer database (delegates to db-testkit)
+    cmds:
+      - echo "Loading seed data into test customer database..."
+      - task -t ../db-testkit seed:load:olist:test
+
+  seed:verify:test:generated:
+    desc: Verify seed data in test customer database (delegates to db-testkit)
+    cmds:
+      - task -t ../db-testkit seed:verify:olist:test
+
+  seed:reload:test:generated:
+    desc: Reload seed data in test customer database (delegates to db-testkit)
+    cmds:
+      - task -t ../db-testkit seed:reload:olist:test
+
+  seed:clean:test:generated:
+    desc: Clean seed data from test customer database (delegates to db-testkit)
+    cmds:
+      - task -t ../db-testkit seed:clean:test
+
+  # Both databases seed tasks
+  seed:load:all:generated:
+    desc: Load seed data into both dev and test customer databases (delegates to db-testkit)
+    cmds:
+      - echo "Loading seed data into all customer databases..."
+      - task -t ../db-testkit seed:load:olist
+
+  seed:verify:all:generated:
+    desc: Verify seed data in both dev and test customer databases (delegates to db-testkit)
+    cmds:
+      - task -t ../db-testkit seed:verify:olist
+
+  seed:reload:all:generated:
+    desc: Reload seed data in both dev and test customer databases (delegates to db-testkit)
+    cmds:
+      - task -t ../db-testkit seed:reload:olist
+
+  seed:clean:all:generated:
+    desc: Clean seed data from both dev and test customer databases (delegates to db-testkit)
+    cmds:
+      - task -t ../db-testkit seed:clean
 `
 
 	t, err := template.New("taskfile").Parse(tmpl)
