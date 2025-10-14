@@ -7,7 +7,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/eikolytics/db-testkit/pkg/docker"
+	"github.com/daana-code/db-testkit/pkg/docker"
 )
 
 // GenerateGoConstants generates a Go source file with database configuration constants.

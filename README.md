@@ -2,8 +2,8 @@
 
 A Go library for managing standardized database test infrastructure across projects. Eliminates code duplication by providing a single source of truth for Docker-based PostgreSQL test environments.
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/eikolytics/db-testkit.svg)](https://pkg.go.dev/github.com/eikolytics/db-testkit)
-[![License](https://img.shields.io/github/license/eikolytics/db-testkit)](LICENSE)
+[![Go Reference](https://pkg.go.dev/badge/github.com/daana-code/db-testkit.svg)](https://pkg.go.dev/github.com/daana-code/db-testkit)
+[![License](https://img.shields.io/github/license/daana-code/db-testkit)](LICENSE)
 
 ## What is db-testkit?
 
@@ -30,7 +30,7 @@ db-testkit provides:
 
 1. **Add db-testkit as a dependency**:
 ```bash
-go get github.com/eikolytics/db-testkit
+go get github.com/daana-code/db-testkit
 ```
 
 2. **Use the provided docker-compose template**:
@@ -51,8 +51,8 @@ cp ../db-testkit/templates/docker-compose.databases.yml ./docker-compose.yml
 3. **Generate configuration files** (in your CLI tool):
 ```go
 import (
-    "github.com/eikolytics/db-testkit/pkg/docker"
-    "github.com/eikolytics/db-testkit/pkg/generator"
+    "github.com/daana-code/db-testkit/pkg/docker"
+    "github.com/daana-code/db-testkit/pkg/generator"
 )
 
 func generateConfig() error {
@@ -290,8 +290,8 @@ import (
     "fmt"
     "path/filepath"
 
-    "github.com/eikolytics/db-testkit/pkg/docker"
-    "github.com/eikolytics/db-testkit/pkg/generator"
+    "github.com/daana-code/db-testkit/pkg/docker"
+    "github.com/daana-code/db-testkit/pkg/generator"
     "github.com/spf13/cobra"
 )
 
@@ -387,7 +387,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 For local development, use a `replace` directive in your `go.mod`:
 
 ```go
-replace github.com/eikolytics/db-testkit => /path/to/local/db-testkit
+replace github.com/daana-code/db-testkit => /path/to/local/db-testkit
 ```
 
 This allows you to make changes to db-testkit and test them immediately in your project.

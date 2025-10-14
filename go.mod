@@ -1,4 +1,4 @@
-module github.com/eikolytics/db-testkit
+module github.com/daana-code/db-testkit
 
 go 1.25.1
 

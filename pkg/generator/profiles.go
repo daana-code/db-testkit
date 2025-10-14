@@ -9,7 +9,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/eikolytics/db-testkit/pkg/docker"
+	"github.com/daana-code/db-testkit/pkg/docker"
 )
 
 // GenerateConnectionProfiles generates a connection-profiles-test.yaml file from database credentials.

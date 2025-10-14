@@ -6,7 +6,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/eikolytics/db-testkit/pkg/docker"
+	"github.com/daana-code/db-testkit/pkg/docker"
 )
 
 // GenerateTaskfile generates a Taskfile.generated.yml with database tasks and credentials.
