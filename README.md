@@ -107,9 +107,9 @@ The provided template includes 4 databases:
 | Database | Port | User | Password | Database Name | Purpose |
 |----------|------|------|----------|---------------|---------|
 | **db** | 5432 | dev | devpass | customerdb | Dev customer database |
-| **db-internal** | 5434 | dev | devpass | focaldb | Dev metadata database |
+| **db-internal** | 5434 | dev | devpass | internaldb | Dev metadata database |
 | **db-test-customer** | 5555 | autotester | autotestpass | testcustomerdb | Test customer database |
-| **db-test-internal** | 6666 | autotester | autotestpass | testfocaldb | Test metadata database |
+| **db-test-internal** | 6666 | autotester | autotestpass | testinternaldb | Test metadata database |
 
 All databases:
 - Use PostgreSQL 15

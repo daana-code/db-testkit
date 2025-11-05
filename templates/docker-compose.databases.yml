@@ -64,13 +64,13 @@ services:
     environment:
       POSTGRES_USER: dev
       POSTGRES_PASSWORD: devpass
-      POSTGRES_DB: focaldb
+      POSTGRES_DB: internaldb
     ports:
       - "5434:5432"
     volumes:
       - pg-internal-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dev -d focaldb"]
+      test: ["CMD-SHELL", "pg_isready -U dev -d internaldb"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -114,13 +114,13 @@ services:
     environment:
       POSTGRES_USER: autotester
       POSTGRES_PASSWORD: autotestpass
-      POSTGRES_DB: testfocaldb
+      POSTGRES_DB: testinternaldb
     ports:
       - "6666:5432"
     volumes:
       - pg-test-internal-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U autotester -d testfocaldb"]
+      test: ["CMD-SHELL", "pg_isready -U autotester -d testinternaldb"]
       interval: 5s
       timeout: 5s
       retries: 5

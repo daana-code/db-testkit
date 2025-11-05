@@ -9,12 +9,12 @@
 # DATABASE ARCHITECTURE:
 #   Development Databases:
 #     - pg-customer (5432) - customerdb
-#     - pg-internal (5434) - focaldb
+#     - pg-internal (5434) - internaldb
 #     Credentials: dev/devpass
 #
 #   Test Databases:
 #     - pg-test-customer (5555) - testcustomerdb
-#     - pg-test-internal (6666) - testfocaldb
+#     - pg-test-internal (6666) - testinternaldb
 #     Credentials: autotester/autotestpass
 #
 # AVAILABLE SEED FILES:
@@ -46,7 +46,7 @@ vars:
   DEV_INTERNAL_CONTAINER: "pg-internal"
   DEV_INTERNAL_USER: "dev"
   DEV_INTERNAL_PASSWORD: "devpass"
-  DEV_INTERNAL_DB: "focaldb"
+  DEV_INTERNAL_DB: "internaldb"
   DEV_INTERNAL_PORT: "5434"
 
   # Test database credentials
@@ -59,7 +59,7 @@ vars:
   TEST_INTERNAL_CONTAINER: "pg-test-internal"
   TEST_INTERNAL_USER: "autotester"
   TEST_INTERNAL_PASSWORD: "autotestpass"
-  TEST_INTERNAL_DB: "testfocaldb"
+  TEST_INTERNAL_DB: "testinternaldb"
   TEST_INTERNAL_PORT: "6666"
 
   # Seed data paths
