@@ -34,12 +34,6 @@ vars:
   TEST_INTERNAL_PASSWORD: "{{.InternalPassword}}"
   TEST_INTERNAL_DB: "{{.InternalDB}}"
 
-  # Seed data configuration
-  # Path to seed data SQL file. Can be overridden via SEED_DATA_PATH environment variable.
-  # Default assumes db-testkit is cloned as sibling directory.
-  SEED_DATA_PATH:
-    sh: echo "${SEED_DATA_PATH:-../db-testkit/testdata/seeds/olist.sql}"
-
 tasks:
   # Override database commands with generated credentials
   test:db:start:generated:
@@ -68,16 +62,17 @@ tasks:
     desc: Load seed data into dev customer database (configurable via SEED_DATA_PATH)
     cmds:
       - |
-        echo "Checking seed data file: {{.SEED_DATA_PATH}}"
-        if [ ! -f "{{.SEED_DATA_PATH}}" ]; then
-          echo "⚠️  WARNING: Seed data file not found at: {{.SEED_DATA_PATH}}"
+        SEED_FILE="${SEED_DATA_PATH:-../db-testkit/testdata/seeds/olist.sql}"
+        echo "Checking seed data file: $SEED_FILE"
+        if [ ! -f "$SEED_FILE" ]; then
+          echo "⚠️  WARNING: Seed data file not found at: $SEED_FILE"
           echo "⚠️  Skipping seed data loading for dev database"
           echo "⚠️  To fix: Set SEED_DATA_PATH environment variable or ensure db-testkit is cloned"
           echo "⚠️  Example: export SEED_DATA_PATH=/path/to/your/seed.sql"
           exit 0
         fi
-        echo "Loading seed data from {{.SEED_DATA_PATH}} into dev customer database..."
-        if cat "{{.SEED_DATA_PATH}}" | docker exec -i pg-customer psql -U dev -d customerdb 2>&1 | grep -v "does not exist, skipping"; then
+        echo "Loading seed data from $SEED_FILE into dev customer database..."
+        if cat "$SEED_FILE" | docker exec -i pg-customer psql -U dev -d customerdb 2>&1 | grep -v "does not exist, skipping"; then
           echo "✓ Successfully loaded seed data into dev customer database"
         else
           echo "⚠️  WARNING: Failed to load seed data into dev customer database"
@@ -110,16 +105,17 @@ tasks:
     desc: Load seed data into test customer database (configurable via SEED_DATA_PATH)
     cmds:
       - |
-        echo "Checking seed data file: {{.SEED_DATA_PATH}}"
-        if [ ! -f "{{.SEED_DATA_PATH}}" ]; then
-          echo "⚠️  WARNING: Seed data file not found at: {{.SEED_DATA_PATH}}"
+        SEED_FILE="${SEED_DATA_PATH:-../db-testkit/testdata/seeds/olist.sql}"
+        echo "Checking seed data file: $SEED_FILE"
+        if [ ! -f "$SEED_FILE" ]; then
+          echo "⚠️  WARNING: Seed data file not found at: $SEED_FILE"
           echo "⚠️  Skipping seed data loading for test database"
           echo "⚠️  To fix: Set SEED_DATA_PATH environment variable or ensure db-testkit is cloned"
           echo "⚠️  Example: export SEED_DATA_PATH=/path/to/your/seed.sql"
           exit 0
         fi
-        echo "Loading seed data from {{.SEED_DATA_PATH}} into test customer database..."
-        if cat "{{.SEED_DATA_PATH}}" | docker exec -i pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}} 2>&1 | grep -v "does not exist, skipping"; then
+        echo "Loading seed data from $SEED_FILE into test customer database..."
+        if cat "$SEED_FILE" | docker exec -i pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}} 2>&1 | grep -v "does not exist, skipping"; then
           echo "✓ Successfully loaded seed data into test customer database"
         else
           echo "⚠️  WARNING: Failed to load seed data into test customer database"
