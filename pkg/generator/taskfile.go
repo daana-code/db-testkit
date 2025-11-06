@@ -63,7 +63,6 @@ tasks:
     cmds:
       - |
         SEED_FILE="${SEED_DATA_PATH:-../db-testkit/testdata/seeds/olist.sql}"
-        echo "Checking seed data file: $SEED_FILE"
         if [ ! -f "$SEED_FILE" ]; then
           echo "⚠️  WARNING: Seed data file not found at: $SEED_FILE"
           echo "⚠️  Skipping seed data loading for dev database"
@@ -71,11 +70,11 @@ tasks:
           echo "⚠️  Example: export SEED_DATA_PATH=/path/to/your/seed.sql"
           exit 0
         fi
-        echo "Loading seed data from $SEED_FILE into dev customer database..."
-        if cat "$SEED_FILE" | docker exec -i pg-customer psql -U dev -d customerdb 2>&1 | grep -v "does not exist, skipping"; then
-          echo "✓ Successfully loaded seed data into dev customer database"
+        echo "Loading seed data into dev customer database..."
+        if cat "$SEED_FILE" | docker exec -i pg-customer psql -U dev -d customerdb > /dev/null 2>&1; then
+          echo "✓ Successfully loaded seed data"
         else
-          echo "⚠️  WARNING: Failed to load seed data into dev customer database"
+          echo "⚠️  WARNING: Failed to load seed data"
           echo "⚠️  This may be expected if the database is not running or the seed data has issues"
           exit 0
         fi
@@ -106,7 +105,6 @@ tasks:
     cmds:
       - |
         SEED_FILE="${SEED_DATA_PATH:-../db-testkit/testdata/seeds/olist.sql}"
-        echo "Checking seed data file: $SEED_FILE"
         if [ ! -f "$SEED_FILE" ]; then
           echo "⚠️  WARNING: Seed data file not found at: $SEED_FILE"
           echo "⚠️  Skipping seed data loading for test database"
@@ -114,11 +112,11 @@ tasks:
           echo "⚠️  Example: export SEED_DATA_PATH=/path/to/your/seed.sql"
           exit 0
         fi
-        echo "Loading seed data from $SEED_FILE into test customer database..."
-        if cat "$SEED_FILE" | docker exec -i pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}} 2>&1 | grep -v "does not exist, skipping"; then
-          echo "✓ Successfully loaded seed data into test customer database"
+        echo "Loading seed data into test customer database..."
+        if cat "$SEED_FILE" | docker exec -i pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}} > /dev/null 2>&1; then
+          echo "✓ Successfully loaded seed data"
         else
-          echo "⚠️  WARNING: Failed to load seed data into test customer database"
+          echo "⚠️  WARNING: Failed to load seed data"
           echo "⚠️  This may be expected if the database is not running or the seed data has issues"
           exit 0
         fi
