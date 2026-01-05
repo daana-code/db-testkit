@@ -42,19 +42,19 @@ tasks:
       - echo "Starting automated testing PostgreSQL databases..."
       - docker compose up -d db-test-customer db-test-internal
       - echo "Waiting for test databases to become healthy..."
-      - ./scripts/wait-for-healthy.sh pg-test-customer 90
-      - ./scripts/wait-for-healthy.sh pg-test-internal 90
+      - ./scripts/wait-for-healthy.sh daana-test-customerdb-pg 90
+      - ./scripts/wait-for-healthy.sh daana-test-internaldb-pg 90
       - echo "✅ Automated testing databases are ready!"
 
   test:db:psql:generated:
     desc: Connect to automated testing customer PostgreSQL with psql (using generated credentials)
     cmds:
-      - docker exec -it pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}}
+      - docker exec -it daana-test-customerdb-pg psql -U {{.CustomerUser}} -d {{.CustomerDB}}
 
   test:db:psql:internal:generated:
     desc: Connect to automated testing internal PostgreSQL with psql (using generated credentials)
     cmds:
-      - docker exec -it pg-test-internal psql -U {{.InternalUser}} -d {{.InternalDB}}
+      - docker exec -it daana-test-internaldb-pg psql -U {{.InternalUser}} -d {{.InternalDB}}
 
   # Seed data management tasks (from db-testkit)
   # Dev database seed tasks (manual testing)
@@ -71,7 +71,7 @@ tasks:
           exit 0
         fi
         echo "Loading seed data into dev customer database..."
-        if cat "$SEED_FILE" | docker exec -i pg-customer psql -U dev -d customerdb > /dev/null 2>&1; then
+        if cat "$SEED_FILE" | docker exec -i daana-dev-customerdb-pg psql -U dev -d customerdb > /dev/null 2>&1; then
           echo "✓ Successfully loaded seed data"
         else
           echo "⚠️  WARNING: Failed to load seed data"
@@ -83,20 +83,20 @@ tasks:
     desc: Verify seed data in dev customer database (from db-testkit)
     cmds:
       - echo "Verifying seed data in dev customer database..."
-      - docker exec pg-customer psql -U dev -d customerdb -c "SELECT schemaname, relname as tablename, n_live_tup as row_count FROM pg_stat_user_tables WHERE schemaname = 'stage' AND relname LIKE 'olist%' ORDER BY relname;"
+      - docker exec daana-dev-customerdb-pg psql -U dev -d customerdb -c "SELECT schemaname, relname as tablename, n_live_tup as row_count FROM pg_stat_user_tables WHERE schemaname = 'stage' AND relname LIKE 'olist%' ORDER BY relname;"
 
   seed:reload:dev:generated:
     desc: Reload seed data in dev customer database (from db-testkit)
     cmds:
       - echo "Dropping stage schema in dev customer database..."
-      - docker exec pg-customer psql -U dev -d customerdb -c "DROP SCHEMA IF EXISTS stage CASCADE;"
+      - docker exec daana-dev-customerdb-pg psql -U dev -d customerdb -c "DROP SCHEMA IF EXISTS stage CASCADE;"
       - task: seed:load:dev:generated
 
   seed:clean:dev:generated:
     desc: Clean seed data from dev customer database (from db-testkit)
     cmds:
       - echo "Dropping stage schema from dev customer database..."
-      - docker exec pg-customer psql -U dev -d customerdb -c "DROP SCHEMA IF EXISTS stage CASCADE;"
+      - docker exec daana-dev-customerdb-pg psql -U dev -d customerdb -c "DROP SCHEMA IF EXISTS stage CASCADE;"
       - echo "✓ Successfully dropped stage schema from dev customer database"
 
   # Test database seed tasks (automated testing)
@@ -113,7 +113,7 @@ tasks:
           exit 0
         fi
         echo "Loading seed data into test customer database..."
-        if cat "$SEED_FILE" | docker exec -i pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}} > /dev/null 2>&1; then
+        if cat "$SEED_FILE" | docker exec -i daana-test-customerdb-pg psql -U {{.CustomerUser}} -d {{.CustomerDB}} > /dev/null 2>&1; then
           echo "✓ Successfully loaded seed data"
         else
           echo "⚠️  WARNING: Failed to load seed data"
@@ -125,20 +125,20 @@ tasks:
     desc: Verify seed data in test customer database (from db-testkit)
     cmds:
       - echo "Verifying seed data in test customer database..."
-      - docker exec pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}} -c "SELECT schemaname, relname as tablename, n_live_tup as row_count FROM pg_stat_user_tables WHERE schemaname = 'stage' AND relname LIKE 'olist%' ORDER BY relname;"
+      - docker exec daana-test-customerdb-pg psql -U {{.CustomerUser}} -d {{.CustomerDB}} -c "SELECT schemaname, relname as tablename, n_live_tup as row_count FROM pg_stat_user_tables WHERE schemaname = 'stage' AND relname LIKE 'olist%' ORDER BY relname;"
 
   seed:reload:test:generated:
     desc: Reload seed data in test customer database (from db-testkit)
     cmds:
       - echo "Dropping stage schema in test customer database..."
-      - docker exec pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}} -c "DROP SCHEMA IF EXISTS stage CASCADE;"
+      - docker exec daana-test-customerdb-pg psql -U {{.CustomerUser}} -d {{.CustomerDB}} -c "DROP SCHEMA IF EXISTS stage CASCADE;"
       - task: seed:load:test:generated
 
   seed:clean:test:generated:
     desc: Clean seed data from test customer database (from db-testkit)
     cmds:
       - echo "Dropping stage schema from test customer database..."
-      - docker exec pg-test-customer psql -U {{.CustomerUser}} -d {{.CustomerDB}} -c "DROP SCHEMA IF EXISTS stage CASCADE;"
+      - docker exec daana-test-customerdb-pg psql -U {{.CustomerUser}} -d {{.CustomerDB}} -c "DROP SCHEMA IF EXISTS stage CASCADE;"
       - echo "✓ Successfully dropped stage schema from test customer database"
 
   # Both databases seed tasks
