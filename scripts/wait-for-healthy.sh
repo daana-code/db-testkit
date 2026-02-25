@@ -74,38 +74,22 @@ fi
 
 echo "⏳ Waiting for container '${CONTAINER_NAME}' to become healthy (timeout: ${TIMEOUT}s)..."
 
-# Get container ID for event filtering
-CONTAINER_ID=$(docker inspect "$CONTAINER_NAME" --format='{{.Id}}')
-
-# Subscribe to health events with timeout using a FIFO for proper process control
-FIFO=$(mktemp -u)
-mkfifo "$FIFO"
-trap 'rm -f "$FIFO"' EXIT
-
-# Start docker events in background
-$TIMEOUT_CMD "$TIMEOUT" docker events \
-    --filter "container=${CONTAINER_ID}" \
-    --filter "event=health_status" \
-    --format '{{.Status}}' > "$FIFO" &
-DOCKER_PID=$!
-
-# Read from FIFO
-while read -r status; do
-    if [ "$status" = "health_status: healthy" ]; then
+# Poll docker inspect for health status (avoids docker events API compatibility issues)
+ELAPSED=0
+INTERVAL=2
+while [ "$ELAPSED" -lt "$TIMEOUT" ]; do
+    HEALTH=$(docker inspect "$CONTAINER_NAME" --format='{{.State.Health.Status}}' 2>/dev/null || echo "unknown")
+    if [ "$HEALTH" = "healthy" ]; then
         echo "✅ Container '${CONTAINER_NAME}' is healthy"
-        kill $DOCKER_PID 2>/dev/null || true
-        wait $DOCKER_PID 2>/dev/null || true
         exit 0
-    elif [ "$status" = "health_status: unhealthy" ]; then
+    elif [ "$HEALTH" = "unhealthy" ]; then
         echo "⚠️  Container '${CONTAINER_NAME}' reported unhealthy, continuing to wait..." >&2
     fi
-done < "$FIFO"
+    sleep "$INTERVAL"
+    ELAPSED=$((ELAPSED + INTERVAL))
+done
 
-# If we get here, docker events exited (timeout or error)
-wait $DOCKER_PID 2>/dev/null || EXIT_CODE=$?
-if [ "${EXIT_CODE:-0}" -eq 124 ]; then
-    echo "Error: Timeout waiting for '${CONTAINER_NAME}' to become healthy after ${TIMEOUT}s" >&2
-    echo "Tip: Check container logs with: docker logs ${CONTAINER_NAME}" >&2
-fi
+echo "Error: Timeout waiting for '${CONTAINER_NAME}' to become healthy after ${TIMEOUT}s" >&2
+echo "Tip: Check container logs with: docker logs ${CONTAINER_NAME}" >&2
 exit 1
 
