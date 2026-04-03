@@ -23,17 +23,12 @@ func ParseDockerCompose(path string) (*DockerCompose, error) {
 }
 
 // ExtractCredentials extracts database credentials from a parsed docker-compose configuration.
-// It looks for db-test-customer and db-test-internal services and extracts their PostgreSQL
+// It looks for the db-test-customer service and extracts its PostgreSQL
 // environment variables and port mappings.
 func ExtractCredentials(dockerCompose *DockerCompose) (*TestDBCredentials, error) {
 	customerService, ok := dockerCompose.Services["db-test-customer"]
 	if !ok {
 		return nil, fmt.Errorf("db-test-customer service not found in docker-compose.yml")
-	}
-
-	internalService, ok := dockerCompose.Services["db-test-internal"]
-	if !ok {
-		return nil, fmt.Errorf("db-test-internal service not found in docker-compose.yml")
 	}
 
 	// Extract customer credentials
@@ -44,25 +39,12 @@ func ExtractCredentials(dockerCompose *DockerCompose) (*TestDBCredentials, error
 	// Extract port from port mapping (e.g., "5555:5432" -> "5555")
 	customerPort := extractHostPort(customerService.Ports, "5555")
 
-	// Extract internal credentials
-	internalUser := internalService.Environment["POSTGRES_USER"]
-	internalPassword := internalService.Environment["POSTGRES_PASSWORD"]
-	internalDB := internalService.Environment["POSTGRES_DB"]
-
-	// Extract port from port mapping (e.g., "6666:5432" -> "6666")
-	internalPort := extractHostPort(internalService.Ports, "6666")
-
 	return &TestDBCredentials{
 		CustomerHost:     "localhost",
 		CustomerPort:     customerPort,
 		CustomerUser:     customerUser,
 		CustomerPassword: customerPassword,
 		CustomerDB:       customerDB,
-		InternalHost:     "localhost",
-		InternalPort:     internalPort,
-		InternalUser:     internalUser,
-		InternalPassword: internalPassword,
-		InternalDB:       internalDB,
 	}, nil
 }
 

@@ -29,18 +29,12 @@ package project
 
 const (
 	// Customer database configuration (db-test-customer service)
-	DefaultCustomerHost     = "{{.CustomerHost}}"
-	DefaultCustomerPort     = {{.CustomerPort}}
-	DefaultCustomerUser     = "{{.CustomerUser}}"
-	DefaultCustomerPassword = "{{.CustomerPassword}}"
-	DefaultCustomerDB       = "{{.CustomerDB}}"
-
-	// Internal database configuration (db-test-internal service)
-	DefaultInternalHost     = "{{.InternalHost}}"
-	DefaultInternalPort     = {{.InternalPort}}
-	DefaultInternalUser     = "{{.InternalUser}}"
-	DefaultInternalPassword = "{{.InternalPassword}}"
-	DefaultInternalDB       = "{{.InternalDB}}"
+	DefaultCustomerHost      = "{{.CustomerHost}}"
+	DefaultCustomerPort      = {{.CustomerPort}}
+	DefaultCustomerUser      = "{{.CustomerUser}}"
+	DefaultCustomerPassword  = "{{.CustomerPassword}}"
+	DefaultCustomerDB        = "{{.CustomerDB}}"
+	DefaultCustomerContainer = "daana-test-customerdb-pg"
 
 	// Common configuration
 	DefaultSSLMode = "disable"

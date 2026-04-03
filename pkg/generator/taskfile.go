@@ -28,33 +28,21 @@ vars:
   TEST_CUSTOMER_PASSWORD: "{{.CustomerPassword}}"
   TEST_CUSTOMER_DB: "{{.CustomerDB}}"
 
-  TEST_INTERNAL_HOST: "{{.InternalHost}}"
-  TEST_INTERNAL_PORT: "{{.InternalPort}}"
-  TEST_INTERNAL_USER: "{{.InternalUser}}"
-  TEST_INTERNAL_PASSWORD: "{{.InternalPassword}}"
-  TEST_INTERNAL_DB: "{{.InternalDB}}"
-
 tasks:
   # Override database commands with generated credentials
   test:db:start:generated:
-    desc: Start the automated testing PostgreSQL databases (using generated credentials)
+    desc: Start the automated testing PostgreSQL database (using generated credentials)
     cmds:
-      - echo "Starting automated testing PostgreSQL databases..."
-      - docker compose up -d db-test-customer db-test-internal
-      - echo "Waiting for test databases to become healthy..."
+      - echo "Starting automated testing PostgreSQL database..."
+      - docker compose up -d db-test-customer
+      - echo "Waiting for test database to become healthy..."
       - ./scripts/wait-for-healthy.sh daana-test-customerdb-pg 90
-      - ./scripts/wait-for-healthy.sh daana-test-internaldb-pg 90
-      - echo "✅ Automated testing databases are ready!"
+      - echo "✅ Automated testing database is ready!"
 
   test:db:psql:generated:
     desc: Connect to automated testing customer PostgreSQL with psql (using generated credentials)
     cmds:
       - docker exec -it daana-test-customerdb-pg psql -U {{.CustomerUser}} -d {{.CustomerDB}}
-
-  test:db:psql:internal:generated:
-    desc: Connect to automated testing internal PostgreSQL with psql (using generated credentials)
-    cmds:
-      - docker exec -it daana-test-internaldb-pg psql -U {{.InternalUser}} -d {{.InternalDB}}
 
   # Seed data management tasks (from db-testkit)
   # Dev database seed tasks (manual testing)

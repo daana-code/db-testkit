@@ -14,16 +14,11 @@ type Service struct {
 }
 
 // TestDBCredentials holds extracted credentials from docker-compose.yml
-// for both customer and internal test databases.
+// for the customer test database.
 type TestDBCredentials struct {
 	CustomerHost     string
 	CustomerPort     string
 	CustomerUser     string
 	CustomerPassword string
 	CustomerDB       string
-	InternalHost     string
-	InternalPort     string
-	InternalUser     string
-	InternalPassword string
-	InternalDB       string
 }
